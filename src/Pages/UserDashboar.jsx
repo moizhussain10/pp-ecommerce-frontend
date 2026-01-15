@@ -109,7 +109,7 @@ function Dashboard({ logout }) {
 
   const fetchUserHistory = async (uid) => {
     try {
-      const response = await fetch(`pp-ecommerce-backend-sldj.vercel.app/history/${uid}`);
+      const response = await fetch(`${BASE_API_URL}/history/${uid}`);
       if (!response.ok) throw new Error("Failed to fetch history.");
 
       const data = await response.json();
@@ -136,7 +136,7 @@ function Dashboard({ logout }) {
 
   const checkUserStatus = async (uid) => {
     try {
-      const response = await fetch(`pp-ecommerce-backend-sldj.vercel.app/status/${uid}`);
+      const response = await fetch(`${BASE_API_URL}/status/${uid}`);
       if (!response.ok) throw new Error("Failed to fetch status.");
 
       const data = await response.json();
@@ -274,7 +274,7 @@ const checkPunctuality = (checkinTime) => {
     };
 
     try {
-      const response = await fetch(`pp-ecommerce-backend-sldj.vercel.app/checkin`, {
+      const response = await fetch(`${BASE_API_URL}/checkin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(checkinData),
@@ -325,7 +325,7 @@ const checkPunctuality = (checkinTime) => {
     };
 
     try {
-      const response = await fetch(`pp-ecommerce-backend-sldj.vercel.app/checkout`, {
+      const response = await fetch(`${BASE_API_URL}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(checkoutData),
