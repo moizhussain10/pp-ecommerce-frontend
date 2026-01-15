@@ -1,0 +1,54 @@
+/* Background gradient */
+.bg-gradient {
+  background: linear-gradient(135deg, #eef2ff, #c7d2fe);
+  padding: 1rem;
+}
+
+/* Card styling */
+.signup-card {
+  max-width: 420px;
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  background-color: #fff;
+  transition: all 0.3s ease-in-out;
+}
+
+.signup-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Button gradient and animation */
+.signup-btn {
+  background: linear-gradient(90deg, #5563de 0%, #74abe2 100%);
+  border: none;
+  transition: all 0.3s ease-in-out;
+}
+
+.signup-btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 15px rgba(85, 99, 222, 0.4);
+}
+
+/* Input focus glow */
+.focus-glow:focus {
+  box-shadow: 0 0 0 0.2rem rgba(85, 99, 222, 0.25);
+  border-color: #5563de;
+}
+
+/* Slide-up + fade-in animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s ease-out;
+}

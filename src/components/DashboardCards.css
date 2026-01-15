@@ -1,0 +1,42 @@
+/* ========================================= */
+/* II. Dashboard Cards Styling (DashboardCards.css) */
+/* ========================================= */
+
+/* Card Container */
+.card-stat {
+    border-radius: 12px;
+    height: 100px; 
+    transition: transform 0.2s;
+    width: 100%;
+    background-color: white; 
+    margin-top: 50px;
+}
+
+.card-stat:hover {
+    transform: translateY(-3px); 
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important; /* Zyada pronounced shadow */
+}
+
+/* Icon Container */
+.card-icon-container {
+    font-size: 2.5rem; 
+    line-height: 1;
+    margin-right: 15px; 
+}
+
+/* Title Text (Total Offices, Total Teams, etc.) */
+.card-title-text {
+    font-size: 0.9rem;
+    color: #888;
+    font-weight: 500;
+}
+
+/* Value Number (19, 9, 44, 0) */
+.card-value-number {
+    font-size: 2.2rem; /* Thoda bada size */
+    font-weight: 300; 
+    color: #333;
+}
+.dashboard-cards{
+    width: 75vw;
+}
