@@ -218,92 +218,41 @@ const checkPunctuality = (checkinTime) => {
     return "FullDay"; // Agar 12 baje se pehle check-in hua
   }; // --- Checkin/Checkout Handlers ---
 
- async function handleCheckin() {
-    // ... (User check, now date, currentHour, currentMinute remains same) ...
-
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const uniqueId = user.uid + "_" + now.getTime();
-    
-    // --- SHIFT ACTIVE TIME CHECK ---
-    
-    // Shift Start Time: 8:00 PM (20:00)
-    const SHIFT_START_HOUR = CHECKIN_CUTOFF_HOUR;
-    
-    // Shift End Time (For blocking): 5:00 AM (05:00)
-    // Hum check kar rahe hain ke kya current time 'resting period' (5 AM se 8 PM) mein hai.
-
-    const isDuringShift = (currentHour >= SHIFT_START_HOUR) || (currentHour < CHECKOUT_TARGET_HOUR);
-    
-    // Agar current time 5 AM (05:00) aur 8 PM (20:00) ke beech hai, toh check-in block hoga
-    const isRestrictedTime = (currentHour >= CHECKOUT_TARGET_HOUR && currentHour < SHIFT_START_HOUR);
-
-    // 🔴 BLOCKING LOGIC: If it's a restricted time (e.g., 6 AM to 7:59 PM)
-    if (isRestrictedTime) {
-         alert(
-            `🚨 Alert: Shift is closed between ${CHECKOUT_TARGET_HOUR} AM and ${CHECKIN_CUTOFF_HOUR} PM. 
-            Aap abhi Check In nahi kar sakte. Kripya 8:00 PM par prayas karein.`
-        );
-        return;
+const handleCheckin = async () => {
+  try {
+    // Check karein ke user login hai aur email mil rahi hai
+    if (!user || !user.email) {
+      alert("User email not found. Please re-login.");
+      return;
     }
 
-    // 🔴 Punctuality Check: Block check-in if before 8:00 PM sharp (This only runs if it's 8 PM or later OR 5 AM or earlier)
-    // NOTE: Humne is check ko upar wale check se alag kar diya hai.
-    
-    // Agar time 8:00 PM hai, toh sirf minute check hoga.
-    if (currentHour === CHECKIN_CUTOFF_HOUR && currentMinute < CHECKIN_CUTOFF_MINUTE)
-    {
-         alert(
-            `🚨 Alert: Aapki shift 8:00 PM (20:00) se pehle shuru nahi ho sakti. Kripya ${CHECKIN_CUTOFF_MINUTE} minute tak intezar karein.`
-        );
-        return;
-    }
-    const status = checkPunctuality(now);
-    setPunctualityStatus(status);
-
-    // 2. Half Day Status (NEW)
-    const halfDayStatus = checkHalfDayStatus(now);
-
-    const checkinData = {
+    const payload = {
       userId: user.uid,
-      timestamp: now.toISOString(),
-      checkinId: uniqueId,
-      punctualityStatus: status,
-      halfDayStatus: halfDayStatus, // <-- Half Day Status Bheja Gaya
+      email: user.email, // <--- Ye line confirm karein ke maujood hai
+      status: "CheckedIn",
+      punctualityStatus: "Not Late", // Aapka logic yahan aayega
+      halfDayStatus: "FullDay"
     };
 
-    try {
-      const response = await fetch(`${BASE_API_URL}/checkin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(checkinData),
-      });
+    const response = await fetch('https://pp-ecommerce-backend-sldj.vercel.app/api/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-      if (response.status === 409) {
-        alert("Error: Aap pehle se hi Check In hain. Kripya Check Out karein.");
-        checkUserStatus(user.uid);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`Checkin Failed: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      setStartTime(now);
-      setIsCheckedIn(true);
-      setActiveCheckinId(result.record.checkinId);
-
-      alert(
-        `Checkin Successful! Status: ${status}. Half Day Status: ${halfDayStatus}`
-      );
-    } catch (error) {
-      console.error("Error during checkin:", error);
-      alert(`Checkin Failed: ${error.message}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.details || "Checkin Failed");
     }
-  } // --- Checkout Handlers (Kept same) ---
+
+    const data = await response.json();
+    console.log("Success:", data);
+    // Yahan state update karein (setIsCheckedIn(true) etc.)
+    
+  } catch (error) {
+    console.error("Error during checkin:", error);
+  }
+};
 
   const handleCheckout = () => {
     setShowCheckoutModal(true);
