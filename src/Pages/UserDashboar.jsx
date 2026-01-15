@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { signOut, onAuthStateChanged } from "firebase/auth";
-import { auth } from "../Config/firebase.js.js";
+import { auth } from "../Config/firebase.js";
 
 // Importing Components and Constants
 import TimeDisplay from "../components/TimeDisplay";

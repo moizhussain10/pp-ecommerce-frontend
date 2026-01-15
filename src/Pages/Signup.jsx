@@ -1,6 +1,6 @@
 import React from 'react'
 import Signupform from "../components/Signupform"
-import { createUserWithEmailAndPassword, auth } from '../Config/firebase.js.js';
+import { createUserWithEmailAndPassword, auth } from '../Config/firebase.js';
 import { Link, useNavigate } from 'react-router-dom';
 
 function Signup() {

@@ -1,5 +1,5 @@
 import React from "react";
-import { signInWithEmailAndPassword, auth } from "../Config/firebase.js.js";
+import { signInWithEmailAndPassword, auth } from "../Config/firebase.js";
 import Loginform from "../components/Loginform";
 import { Link, useNavigate } from "react-router-dom";
 
