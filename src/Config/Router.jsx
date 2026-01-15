@@ -3,7 +3,7 @@ import Signup from "../Pages/Signup";
 import Login from "../Pages/Login";
 import Dashboard from "../Pages/UserDashboar";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, auth } from "../Config/firebase";
+import { onAuthStateChanged, auth } from "../Config/firebase.js";
 
 function Router() {
   const [isuser, setisuser] = useState(false);

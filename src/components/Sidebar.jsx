@@ -3,7 +3,7 @@ import { Nav } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom"; // useNavigate import kiya
 import logo from "../assets/logo-astrik.png";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth, db } from "../config/firebase";
+import { auth, db } from "../Config/firebase.js";
 
 // === Firebase Auth Import (Assuming you use Firebase) ===
 // Ise apni project structure ke mutabiq adjust karein.
