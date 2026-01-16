@@ -6,10 +6,10 @@ import { BASE_API_URL } from "../constants";
 
 const styles = {
   container: { padding: "30px", backgroundColor: "#f4f7f6", minHeight: "100vh", fontFamily: "inherit" },
-  header: { 
-    display: "flex", 
-    justifyContent: "space-between", 
-    alignItems: "center", 
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: "30px",
     backgroundColor: "white",
     padding: "15px 25px",
@@ -80,11 +80,11 @@ function AdminDashboard() {
           <h2 style={{ margin: 0, color: "#2d3748" }}>Admin Control Panel</h2>
           <p style={{ margin: 0, fontSize: "12px", color: "#718096" }}>Monitoring Live Attendance</p>
         </div>
-        
+
         <div style={{ display: "flex", alignItems: "center" }}>
           <button onClick={fetchAttendance} style={styles.refreshBtn}>Refresh</button>
-          <button 
-            onClick={handleLogout} 
+          <button
+            onClick={handleLogout}
             style={styles.logoutBtn}
             onMouseOver={(e) => { e.target.style.backgroundColor = "#dc3545"; e.target.style.color = "white"; }}
             onMouseOut={(e) => { e.target.style.backgroundColor = "transparent"; e.target.style.color = "#dc3545"; }}
@@ -131,17 +131,34 @@ function AdminDashboard() {
                   )}
                 </td>
                 <td style={{ padding: "15px" }}>
-                   <span style={{ 
-                     padding: "4px 10px", borderRadius: "4px", fontSize: "12px",
-                     backgroundColor: record.punctualityStatus === "Late" ? "#fff5f5" : "#f0fff4",
-                     color: record.punctualityStatus === "Late" ? "#c53030" : "#2f855a"
-                   }}>
-                     {record.punctualityStatus || "Not Late"}
-                   </span>
+                  <span style={{
+                    padding: "4px 10px", borderRadius: "4px", fontSize: "12px",
+                    backgroundColor: record.punctualityStatus === "Late" ? "#fff5f5" : "#f0fff4",
+                    color: record.punctualityStatus === "Late" ? "#c53030" : "#2f855a"
+                  }}>
+                    {record.punctualityStatus || "Not Late"}
+                  </span>
                 </td>
                 <td style={{ padding: "15px" }}>{new Date(record.checkinTime).toLocaleTimeString()}</td>
                 <td style={{ padding: "15px" }}>
                   {record.checkoutTime ? new Date(record.checkoutTime).toLocaleTimeString() : "—"}
+
+                  <td style={styles.td}>
+                    <button
+                      onClick={() => navigate(`/admin/user/${record.email}`)}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      View Details
+                    </button>
+                  </td>
+
                 </td>
               </tr>
             ))}
