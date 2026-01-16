@@ -7,7 +7,7 @@ import CheckoutModal from "../components/CheckoutModal";
 import UserProfile from "../components/UserProfile";
 import { BASE_API_URL, TARGET_WORK_HOURS, CHECKOUT_TARGET_HOUR, CHECKOUT_TARGET_MINUTE } from "../constants";
 
-function Dashboard({ logout }) {
+function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [startTime, setStartTime] = useState(null);
@@ -19,25 +19,31 @@ function Dashboard({ logout }) {
   const [userHistory, setUserHistory] = useState([]);
   const intervalRef = useRef(null);
 
-  // 1. Calculations with Safety Returns
-  const calculateRemainingTimeTo5AM = () => {
-    if (!startTime) return { message: `Target ${TARGET_WORK_HOURS}h`, isOvershot: false };
-    
-    const now = new Date();
-    const targetTime = new Date(startTime);
-    targetTime.setHours(CHECKOUT_TARGET_HOUR, CHECKOUT_TARGET_MINUTE, 0, 0);
-    if (startTime.getHours() >= CHECKOUT_TARGET_HOUR) targetTime.setDate(targetTime.getDate() + 1);
+  // Safely calculate time details
+  const getSafeTimeDetails = () => {
+    const defaultData = { message: "Calculating...", isOvershot: false };
+    if (!startTime) return defaultData;
 
-    const diffMs = targetTime.getTime() - now.getTime();
-    const isOvershot = diffMs <= 0;
-    const absDiffMs = Math.abs(diffMs);
-    const totalSeconds = Math.floor(absDiffMs / 1000);
-    const hr = Math.floor(totalSeconds / 3600);
-    const min = Math.floor((totalSeconds % 3600) / 60);
-    const sec = totalSeconds % 60;
+    try {
+      const now = new Date();
+      const targetTime = new Date(startTime);
+      targetTime.setHours(CHECKOUT_TARGET_HOUR, CHECKOUT_TARGET_MINUTE, 0, 0);
+      if (startTime.getHours() >= CHECKOUT_TARGET_HOUR) targetTime.setDate(targetTime.getDate() + 1);
 
-    const timeStr = `${String(hr).padStart(2, '0')}h ${String(min).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`;
-    return { message: isOvershot ? "00h 00m 00s (Shift Ended)" : `${timeStr} remaining`, isOvershot };
+      const diffMs = targetTime.getTime() - now.getTime();
+      const isOvershot = diffMs <= 0;
+      const absDiffMs = Math.abs(diffMs);
+      const hr = Math.floor(absDiffMs / 3600000);
+      const min = Math.floor((absDiffMs % 3600000) / 60000);
+      const sec = Math.floor((absDiffMs % 60000) / 1000);
+
+      return {
+        message: isOvershot ? "Shift Over (5 AM Passed)" : `${hr}h ${min}m ${sec}s remaining`,
+        isOvershot
+      };
+    } catch (e) {
+      return defaultData;
+    }
   };
 
   useEffect(() => {
@@ -63,7 +69,7 @@ function Dashboard({ logout }) {
         setActiveCheckinId(data.checkinId);
         setIsCheckedIn(true);
       }
-    } catch (e) { console.error("Status error:", e); }
+    } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
 
@@ -76,12 +82,12 @@ function Dashboard({ logout }) {
 
   const handleCheckin = async () => {
     const now = new Date();
-    const checkinId = `ATT-${Date.now()}`;
+    const cId = `ATT-${Date.now()}`;
     const payload = {
       userId: user.uid,
       email: user.email,
       timestamp: now.toISOString(),
-      checkinId,
+      checkinId: cId,
       status: "CheckedIn",
       punctualityStatus: "Present",
       halfDayStatus: "FullDay"
@@ -95,26 +101,42 @@ function Dashboard({ logout }) {
       });
       if (res.ok) {
         setStartTime(now);
+        setActiveCheckinId(cId);
         setIsCheckedIn(true);
-        setActiveCheckinId(checkinId);
       }
     } catch (e) { alert("Checkin Failed"); }
   };
 
+  // --- FIXED CHECKOUT FUNCTION ---
   const confirmCheckout = async () => {
+    if (!activeCheckinId) return alert("No active check-in ID found!");
+
     try {
       const res = await fetch(`${BASE_API_URL}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.uid, checkinId: activeCheckinId, timestamp: new Date().toISOString() })
+        body: JSON.stringify({ 
+          userId: user.uid, 
+          checkinId: activeCheckinId, 
+          timestamp: new Date().toISOString() 
+        })
       });
+
       if (res.ok) {
+        clearInterval(intervalRef.current); // Stop timer immediately
         setIsCheckedIn(false);
         setStartTime(null);
-        fetchUserHistory(user.uid);
+        setActiveCheckinId(null);
         setShowCheckoutModal(false);
+        fetchUserHistory(user.uid);
+        alert("Checkout Successful!");
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.message || "Checkout failed"}`);
       }
-    } catch (e) { alert("Checkout Failed"); }
+    } catch (e) {
+      alert("Network Error during checkout");
+    }
   };
 
   useEffect(() => {
@@ -126,14 +148,15 @@ function Dashboard({ logout }) {
         const secs = Math.floor((diff % 60000) / 1000);
         setElapsedTime(`${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`);
       }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
     }
     return () => clearInterval(intervalRef.current);
   }, [isCheckedIn, startTime]);
 
-  if (loading) return <div style={{padding: "50px", textAlign: "center"}}>Loading Dashboard...</div>;
+  if (loading) return <div style={{textAlign: "center", marginTop: "50px"}}>Loading...</div>;
 
-  // Render logic with safety check
-  const timeDetails = calculateRemainingTimeTo5AM();
+  const currentDetails = getSafeTimeDetails();
 
   return (
     <div style={{ padding: "20px", textAlign: "center" }}>
@@ -149,19 +172,21 @@ function Dashboard({ logout }) {
       {isCheckedIn && (
         <TimeDisplay 
           elapsedTime={elapsedTime} 
-          timeDetails={timeDetails || { message: "Calculating...", isOvershot: false }} 
+          timeDetails={currentDetails} 
         />
       )}
-
-      <button onClick={() => signOut(auth)} style={{ display: "block", margin: "40px auto", color: "red", background: "none", border: "1px solid red", padding: "5px 15px", borderRadius: "5px", cursor: "pointer" }}>Logout</button>
 
       {showCheckoutModal && (
         <CheckoutModal 
           confirmCheckout={confirmCheckout} 
           cancelCheckout={() => setShowCheckoutModal(false)} 
           elapsedTime={elapsedTime}
+          // Pass any other data your modal needs safely
+          timeDetails={currentDetails}
         />
       )}
+
+      <button onClick={() => signOut(auth)} style={{ display: "block", margin: "40px auto", color: "#666", background: "none", border: "1px solid #ccc", padding: "5px 15px", borderRadius: "5px", cursor: "pointer" }}>Logout</button>
     </div>
   );
 }
