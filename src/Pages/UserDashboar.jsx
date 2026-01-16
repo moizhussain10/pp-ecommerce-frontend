@@ -7,13 +7,13 @@ import { auth } from "../Config/firebase.js";
 import TimeDisplay from "../components/TimeDisplay";
 import CheckoutModal from "../components/CheckoutModal";
 import UserProfile from "../components/UserProfile";
-import { 
-  BASE_API_URL, 
-  TARGET_WORK_HOURS, 
-  CHECKIN_CUTOFF_HOUR, 
-  CHECKIN_CUTOFF_MINUTE, 
-  CHECKOUT_TARGET_HOUR, 
-  CHECKOUT_TARGET_MINUTE 
+import {
+  BASE_API_URL,
+  TARGET_WORK_HOURS,
+  CHECKIN_CUTOFF_HOUR,
+  CHECKIN_CUTOFF_MINUTE,
+  CHECKOUT_TARGET_HOUR,
+  CHECKOUT_TARGET_MINUTE
 } from "../constants";
 
 function Dashboard() {
@@ -27,7 +27,7 @@ function Dashboard() {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [userHistory, setUserHistory] = useState([]);
   const [punctualityStatus, setPunctualityStatus] = useState("Not Late");
-  
+
   const intervalRef = useRef(null);
 
   // --- 1. Late Calculation Logic ---
@@ -35,10 +35,10 @@ function Dashboard() {
     const targetPunctualityTime = new Date(checkinTime);
 
     // Agar check-in 12 AM se 5 AM ke darmiyan hai, toh cutoff pichle din ka 8 PM hoga
-    if (checkinTime.getHours() < CHECKOUT_TARGET_HOUR) { 
-        targetPunctualityTime.setDate(targetPunctualityTime.getDate() - 1);
+    if (checkinTime.getHours() < CHECKOUT_TARGET_HOUR) {
+      targetPunctualityTime.setDate(targetPunctualityTime.getDate() - 1);
     }
-    
+
     // Target fix 8:00 PM (CHECKIN_CUTOFF_HOUR = 20)
     targetPunctualityTime.setHours(CHECKIN_CUTOFF_HOUR, CHECKIN_CUTOFF_MINUTE, 0, 0);
 
@@ -54,7 +54,7 @@ function Dashboard() {
       const now = new Date();
       const targetTime = new Date(startTime);
       targetTime.setHours(CHECKOUT_TARGET_HOUR, CHECKOUT_TARGET_MINUTE, 0, 0);
-      
+
       if (startTime.getHours() >= CHECKOUT_TARGET_HOUR) {
         targetTime.setDate(targetTime.getDate() + 1);
       }
@@ -62,7 +62,7 @@ function Dashboard() {
       const diffMs = targetTime.getTime() - now.getTime();
       const isOvershot = diffMs <= 0;
       const absDiffMs = Math.abs(diffMs);
-      
+
       const hr = Math.floor(absDiffMs / 3600000);
       const min = Math.floor((absDiffMs % 3600000) / 60000);
       const sec = Math.floor((absDiffMs % 60000) / 1000);
@@ -100,16 +100,24 @@ function Dashboard() {
 
   const checkUserStatus = async (uid) => {
     try {
+      // Humne URL mein UID bhej di taake backend sirf isi user ka status de
       const res = await fetch(`${BASE_API_URL}/status/${uid}`);
       const data = await res.json();
+
       if (data.isCheckedIn) {
         setStartTime(new Date(data.checkinTime));
         setActiveCheckinId(data.checkinId);
         setIsCheckedIn(true);
         setPunctualityStatus(data.punctualityStatus || "Not Late");
+      } else {
+        setIsCheckedIn(false);
+        setStartTime(null);
       }
-    } catch (e) { console.error("Sync Error:", e); }
-    finally { setLoading(false); }
+    } catch (e) {
+      console.error("Sync Error:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchUserHistory = async (uid) => {
@@ -158,10 +166,10 @@ function Dashboard() {
       const res = await fetch(`${BASE_API_URL}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          userId: user.uid, 
-          checkinId: activeCheckinId, 
-          timestamp: new Date().toISOString() 
+        body: JSON.stringify({
+          userId: user.uid,
+          checkinId: activeCheckinId,
+          timestamp: new Date().toISOString()
         })
       });
 
@@ -185,7 +193,7 @@ function Dashboard() {
         const hrs = Math.floor(diff / 3600000);
         const mins = Math.floor((diff % 3600000) / 60000);
         const secs = Math.floor((diff % 60000) / 1000);
-        setElapsedTime(`${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`);
+        setElapsedTime(`${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
       }, 1000);
     } else {
       clearInterval(intervalRef.current);
@@ -193,39 +201,39 @@ function Dashboard() {
     return () => clearInterval(intervalRef.current);
   }, [isCheckedIn, startTime]);
 
-  if (loading) return <div style={{textAlign: "center", marginTop: "50px"}}>Authenticating...</div>;
+  if (loading) return <div style={{ textAlign: "center", marginTop: "50px" }}>Authenticating...</div>;
 
   return (
     <div style={{ padding: "20px", textAlign: "center" }}>
-      <UserProfile 
-        userEmail={user?.email} 
-        checkinTime={startTime} 
-        userHistory={userHistory} 
+      <UserProfile
+        userEmail={user?.email}
+        checkinTime={startTime}
+        userHistory={userHistory}
         punctualityStatus={punctualityStatus}
       />
-      
-      <button 
+
+      <button
         onClick={isCheckedIn ? () => setShowCheckoutModal(true) : handleCheckin}
-        style={{ 
-          backgroundColor: isCheckedIn ? "#dc3545" : "#28a745", 
-          color: "white", padding: "15px 30px", borderRadius: "8px", 
-          border: "none", fontSize: "1.2rem", cursor: "pointer", margin: "20px" 
+        style={{
+          backgroundColor: isCheckedIn ? "#dc3545" : "#28a745",
+          color: "white", padding: "15px 30px", borderRadius: "8px",
+          border: "none", fontSize: "1.2rem", cursor: "pointer", margin: "20px"
         }}
       >
         {isCheckedIn ? "Check Out" : "Check In"}
       </button>
 
       {isCheckedIn && (
-        <TimeDisplay 
-          elapsedTime={elapsedTime} 
-          timeDetails={currentDetails} 
+        <TimeDisplay
+          elapsedTime={elapsedTime}
+          timeDetails={currentDetails}
         />
       )}
 
       {showCheckoutModal && (
-        <CheckoutModal 
-          confirmCheckout={confirmCheckout} 
-          cancelCheckout={() => setShowCheckoutModal(false)} 
+        <CheckoutModal
+          confirmCheckout={confirmCheckout}
+          cancelCheckout={() => setShowCheckoutModal(false)}
           elapsedTime={elapsedTime}
           startTime={startTime}
           timeDetails={currentDetails}
@@ -234,8 +242,8 @@ function Dashboard() {
         />
       )}
 
-      <button 
-        onClick={() => signOut(auth)} 
+      <button
+        onClick={() => signOut(auth)}
         style={{ display: "block", margin: "40px auto", color: "#666", background: "none", border: "1px solid #ccc", padding: "5px 15px", borderRadius: "5px", cursor: "pointer" }}
       >
         Logout
