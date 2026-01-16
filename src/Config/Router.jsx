@@ -57,6 +57,8 @@ function AppRouter() {
           } 
         />
 
+        <Route path="/admin/user/:email" element={<UserDetails />} />
+
         {/* 404/Fallback */}
         <Route path="*" element={<Navigate to="/" />} />
 
