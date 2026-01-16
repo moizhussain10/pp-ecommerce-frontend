@@ -49,7 +49,7 @@ const AdminPanel = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] p-4 md:p-10 font-sans text-gray-800">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* --- TOP HEADER SECTION --- */}
         <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 gap-4">
           <div>
@@ -58,15 +58,15 @@ const AdminPanel = () => {
             </h1>
             <p className="text-gray-500 text-sm">Monitor employee activity in real-time</p>
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={fetchAllAttendance}
               className="flex items-center gap-2 bg-blue-50 text-blue-600 px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-100 transition-all active:scale-95"
             >
               🔄 Refresh
             </button>
-            <button 
+            <button
               onClick={handleLogout}
               className="flex items-center gap-2 bg-red-50 text-red-600 px-5 py-2.5 rounded-xl font-semibold hover:bg-red-100 transition-all active:scale-95 border border-red-100"
             >
@@ -77,14 +77,14 @@ const AdminPanel = () => {
 
         {/* --- STATS CARDS (Optional but looks cool) --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <p className="text-gray-500 text-sm font-medium">Total Records</p>
-                <h2 className="text-3xl font-bold">{attendance.length}</h2>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
-                <p className="text-gray-500 text-sm font-medium">Present Today</p>
-                <h2 className="text-3xl font-bold">{attendance.filter(r => r.status === 'CheckedIn').length}</h2>
-            </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <p className="text-gray-500 text-sm font-medium">Total Records</p>
+            <h2 className="text-3xl font-bold">{attendance.length}</h2>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
+            <p className="text-gray-500 text-sm font-medium">Present Today</p>
+            <h2 className="text-3xl font-bold">{attendance.filter(r => r.status === 'CheckedIn').length}</h2>
+          </div>
         </div>
 
         {/* --- TABLE SECTION --- */}
@@ -108,23 +108,22 @@ const AdminPanel = () => {
                     <td className="p-5">
                       <div className="flex flex-col">
                         <span className="font-bold text-gray-700 group-hover:text-blue-600 transition-colors">
-                            {record.email || "N/A"}
+                          {record.email || "N/A"}
                         </span>
                         <span className="text-[10px] text-gray-400 font-mono">{record._id}</span>
                       </div>
                     </td>
                     <td className="p-5 text-center">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-black ring-1 ring-inset ${
-                        record.status === 'CheckedIn' 
-                        ? 'bg-green-50 text-green-700 ring-green-600/20' 
-                        : 'bg-gray-50 text-gray-600 ring-gray-600/20'
-                      }`}>
-                        {record.status === 'CheckedIn' ? '● ONLINE' : '○ OFFLINE'}
+                      <span style={{
+                        color: record.status === "CheckedIn" ? "green" : "red",
+                        fontWeight: "bold"
+                      }}>
+                        {record.status === "CheckedIn" ? "Online" : "Offline"}
                       </span>
                     </td>
                     <td className="p-5 text-center">
-                        <div className="text-sm font-bold text-gray-700">{formatTime(record.checkinTime)}</div>
-                        <div className="text-[10px] text-gray-400">to {formatTime(record.checkoutTime)}</div>
+                      <div className="text-sm font-bold text-gray-700">{formatTime(record.checkinTime)}</div>
+                      <div className="text-[10px] text-gray-400">to {formatTime(record.checkoutTime)}</div>
                     </td>
                     <td className="p-5 text-center">
                       <span className={`text-sm font-bold ${record.punctualityStatus === 'Late' ? 'text-red-500' : 'text-green-500'}`}>
@@ -141,11 +140,11 @@ const AdminPanel = () => {
               </tbody>
             </table>
           </div>
-          
+
           {!loading && attendance.length === 0 && (
             <div className="p-20 text-center">
-                <div className="text-5xl mb-4">📂</div>
-                <h3 className="text-gray-400 font-medium">No attendance data found for today.</h3>
+              <div className="text-5xl mb-4">📂</div>
+              <h3 className="text-gray-400 font-medium">No attendance data found for today.</h3>
             </div>
           )}
         </div>
