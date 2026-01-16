@@ -1,4 +1,3 @@
-// src/components/CheckoutModal.jsx
 import React from "react";
 import { TARGET_WORK_HOURS } from "../constants";
 
@@ -9,7 +8,7 @@ const modalStyles = {
     left: 0,
     width: "100%",
     height: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)", // Thora dark kiya backdrop
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -56,6 +55,12 @@ function CheckoutModal({
   confirmCheckout,
   cancelCheckout,
 }) {
+  
+  // Safe extraction of timeDetails to prevent 
+  // "Cannot read properties of undefined" error
+  const isOvershot = timeDetails?.isOvershot || false;
+  const statusMessage = timeDetails?.message || "Calculating status...";
+
   return (
     <div style={modalStyles.backdrop}>
       <div style={modalStyles.modal}>
@@ -66,7 +71,7 @@ function CheckoutModal({
         <div style={modalStyles.detailsBox}>
           <p style={{ margin: "5px 0" }}>
             <strong>Check-in:</strong>{" "}
-            {startTime
+            {startTime instanceof Date
               ? `${startTime.toLocaleTimeString()} (${startTime.toLocaleDateString()})`
               : "N/A"}
           </p>
@@ -84,8 +89,8 @@ function CheckoutModal({
           <hr style={{ borderTop: "1px solid #ddd", margin: "15px 0" }} />
 
           <p style={{ margin: "5px 0", fontSize: "1.1rem" }}>
-            <strong>Target Work Hours ({TARGET_WORK_HOURS}h):</strong>{" "}
-            {expectedCheckout}
+            <strong>Target ({TARGET_WORK_HOURS}h):</strong>{" "}
+            {expectedCheckout || "N/A"}
           </p>
 
           <p
@@ -95,17 +100,19 @@ function CheckoutModal({
               color: "#007bff",
             }}
           >
-            <strong>Elapsed Time:</strong> {elapsedTime}
+            <strong>Elapsed Time:</strong> {elapsedTime || "00:00:00"}
           </p>
 
+          {/* FIX: Using safe variables to prevent crash */}
           <p
             style={{
-              fontSize: "1.2rem",
+              fontSize: "1.1rem",
               margin: "15px 0",
-              color: timeDetails.isOvershot ? "#dc3545" : "#28a745",
+              color: isOvershot ? "#dc3545" : "#28a745",
+              fontWeight: "500"
             }}
           >
-            <strong>Time Status:</strong> {timeDetails.message}
+            <strong>Time Status:</strong> {statusMessage}
           </p>
         </div>
 
