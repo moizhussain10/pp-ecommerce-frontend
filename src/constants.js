@@ -1,9 +1,8 @@
 // src/constants.js
 
-export const BASE_API_URL = "https://pp-ecommerce-backend-sldj.vercel.app";
+export const BASE_API_URL = "https://pp-ecommerce-backend-sldj.vercel.app/api";
 export const TARGET_WORK_HOURS = 9;
 
-// Punctuality Cutoff Time (8:00 PM)
 export const CHECKIN_CUTOFF_HOUR = 20;
 export const CHECKIN_CUTOFF_MINUTE = 0;
 
