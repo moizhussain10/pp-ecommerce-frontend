@@ -2,12 +2,16 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "../Config/firebase.js";
+
+// Components & Constants
 import TimeDisplay from "../components/TimeDisplay";
 import CheckoutModal from "../components/CheckoutModal";
 import UserProfile from "../components/UserProfile";
 import { 
   BASE_API_URL, 
   TARGET_WORK_HOURS, 
+  CHECKIN_CUTOFF_HOUR, 
+  CHECKIN_CUTOFF_MINUTE, 
   CHECKOUT_TARGET_HOUR, 
   CHECKOUT_TARGET_MINUTE 
 } from "../constants";
@@ -22,10 +26,26 @@ function Dashboard() {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [userHistory, setUserHistory] = useState([]);
-  const [punctualityStatus, setPunctualityStatus] = useState("Present");
+  const [punctualityStatus, setPunctualityStatus] = useState("Not Late");
+  
   const intervalRef = useRef(null);
 
-  // --- 1. Robust Time Calculation ---
+  // --- 1. Late Calculation Logic ---
+  const calculatePunctuality = (checkinTime) => {
+    const targetPunctualityTime = new Date(checkinTime);
+
+    // Agar check-in 12 AM se 5 AM ke darmiyan hai, toh cutoff pichle din ka 8 PM hoga
+    if (checkinTime.getHours() < CHECKOUT_TARGET_HOUR) { 
+        targetPunctualityTime.setDate(targetPunctualityTime.getDate() - 1);
+    }
+    
+    // Target fix 8:00 PM (CHECKIN_CUTOFF_HOUR = 20)
+    targetPunctualityTime.setHours(CHECKIN_CUTOFF_HOUR, CHECKIN_CUTOFF_MINUTE, 0, 0);
+
+    return checkinTime.getTime() > targetPunctualityTime.getTime() ? "Late" : "Not Late";
+  };
+
+  // --- 2. Safe Time Details for Display & Modal ---
   const currentDetails = useMemo(() => {
     const defaultData = { message: "Calculating...", isOvershot: false };
     if (!startTime) return defaultData;
@@ -35,7 +55,6 @@ function Dashboard() {
       const targetTime = new Date(startTime);
       targetTime.setHours(CHECKOUT_TARGET_HOUR, CHECKOUT_TARGET_MINUTE, 0, 0);
       
-      // Agar check-in 5 AM ke baad hua hai, toh target agli subah ka 5 AM hoga
       if (startTime.getHours() >= CHECKOUT_TARGET_HOUR) {
         targetTime.setDate(targetTime.getDate() + 1);
       }
@@ -49,23 +68,22 @@ function Dashboard() {
       const sec = Math.floor((absDiffMs % 60000) / 1000);
 
       return {
-        message: isOvershot ? "Shift Ended (5 AM Passed)" : `${hr}h ${min}m ${sec}s remaining until 5 AM`,
+        message: isOvershot ? "Shift Ended (5 AM Passed)" : `${hr}h ${min}m ${sec}s remaining`,
         isOvershot
       };
     } catch (e) {
       return defaultData;
     }
-  }, [startTime, elapsedTime]); // Elapsed time ke saath update hoga
+  }, [startTime, elapsedTime]);
 
-  // Expected Checkout Calculation for Modal
   const expectedCheckout = useMemo(() => {
     if (!startTime) return "N/A";
     const target = new Date(startTime);
     target.setHours(target.getHours() + TARGET_WORK_HOURS);
-    return target.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return target.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
   }, [startTime]);
 
-  // --- 2. Auth & Sync ---
+  // --- 3. Auth & Database Sync ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -88,9 +106,9 @@ function Dashboard() {
         setStartTime(new Date(data.checkinTime));
         setActiveCheckinId(data.checkinId);
         setIsCheckedIn(true);
-        setPunctualityStatus(data.punctualityStatus || "Present");
+        setPunctualityStatus(data.punctualityStatus || "Not Late");
       }
-    } catch (e) { console.error("Status Sync Error:", e); }
+    } catch (e) { console.error("Sync Error:", e); }
     finally { setLoading(false); }
   };
 
@@ -98,22 +116,23 @@ function Dashboard() {
     try {
       const res = await fetch(`${BASE_API_URL}/history/${uid}`);
       if (res.ok) setUserHistory(await res.json());
-    } catch (e) { console.error("History Error:", e); }
+    } catch (e) { console.error("History Fetch Error:", e); }
   };
 
-  // --- 3. Handlers ---
+  // --- 4. Handlers ---
   const handleCheckin = async () => {
     if (!user) return;
     const now = new Date();
     const cId = `ATT-${Date.now()}`;
-    
+    const pStatus = calculatePunctuality(now);
+
     const payload = {
       userId: user.uid,
       email: user.email,
       timestamp: now.toISOString(),
       checkinId: cId,
       status: "CheckedIn",
-      punctualityStatus: "Present",
+      punctualityStatus: pStatus,
       halfDayStatus: "FullDay"
     };
 
@@ -127,6 +146,7 @@ function Dashboard() {
         setStartTime(now);
         setActiveCheckinId(cId);
         setIsCheckedIn(true);
+        setPunctualityStatus(pStatus);
       }
     } catch (e) { alert("Check-in Failed"); }
   };
@@ -146,16 +166,18 @@ function Dashboard() {
       });
 
       if (res.ok) {
+        clearInterval(intervalRef.current);
         setIsCheckedIn(false);
         setStartTime(null);
         setActiveCheckinId(null);
         setShowCheckoutModal(false);
         fetchUserHistory(user.uid);
+        alert("Checked Out Successfully!");
       }
     } catch (e) { alert("Checkout Error"); }
   };
 
-  // Timer Effect
+  // Timer logic
   useEffect(() => {
     if (isCheckedIn && startTime) {
       intervalRef.current = setInterval(() => {
@@ -175,7 +197,12 @@ function Dashboard() {
 
   return (
     <div style={{ padding: "20px", textAlign: "center" }}>
-      <UserProfile userEmail={user?.email} checkinTime={startTime} userHistory={userHistory} />
+      <UserProfile 
+        userEmail={user?.email} 
+        checkinTime={startTime} 
+        userHistory={userHistory} 
+        punctualityStatus={punctualityStatus}
+      />
       
       <button 
         onClick={isCheckedIn ? () => setShowCheckoutModal(true) : handleCheckin}
@@ -207,7 +234,12 @@ function Dashboard() {
         />
       )}
 
-      <button onClick={() => signOut(auth)} style={{ display: "block", margin: "40px auto", color: "#666", background: "none", border: "1px solid #ccc", padding: "5px 15px", borderRadius: "5px", cursor: "pointer" }}> Logout </button>
+      <button 
+        onClick={() => signOut(auth)} 
+        style={{ display: "block", margin: "40px auto", color: "#666", background: "none", border: "1px solid #ccc", padding: "5px 15px", borderRadius: "5px", cursor: "pointer" }}
+      >
+        Logout
+      </button>
     </div>
   );
 }
