@@ -5,7 +5,7 @@ import { auth } from "../Config/firebase.js";
 import TimeDisplay from "../components/TimeDisplay";
 import CheckoutModal from "../components/CheckoutModal";
 import UserProfile from "../components/UserProfile";
-import { BASE_API_URL } from "../constants";
+import { BASE_API_URL, TARGET_WORK_HOURS, CHECKOUT_TARGET_HOUR, CHECKOUT_TARGET_MINUTE } from "../constants";
 
 function Dashboard({ logout }) {
   const navigate = useNavigate();
@@ -16,9 +16,29 @@ function Dashboard({ logout }) {
   const [loading, setLoading] = useState(true);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [punctualityStatus, setPunctualityStatus] = useState(null);
   const [userHistory, setUserHistory] = useState([]);
   const intervalRef = useRef(null);
+
+  // 1. Calculations with Safety Returns
+  const calculateRemainingTimeTo5AM = () => {
+    if (!startTime) return { message: `Target ${TARGET_WORK_HOURS}h`, isOvershot: false };
+    
+    const now = new Date();
+    const targetTime = new Date(startTime);
+    targetTime.setHours(CHECKOUT_TARGET_HOUR, CHECKOUT_TARGET_MINUTE, 0, 0);
+    if (startTime.getHours() >= CHECKOUT_TARGET_HOUR) targetTime.setDate(targetTime.getDate() + 1);
+
+    const diffMs = targetTime.getTime() - now.getTime();
+    const isOvershot = diffMs <= 0;
+    const absDiffMs = Math.abs(diffMs);
+    const totalSeconds = Math.floor(absDiffMs / 1000);
+    const hr = Math.floor(totalSeconds / 3600);
+    const min = Math.floor((totalSeconds % 3600) / 60);
+    const sec = totalSeconds % 60;
+
+    const timeStr = `${String(hr).padStart(2, '0')}h ${String(min).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`;
+    return { message: isOvershot ? "00h 00m 00s (Shift Ended)" : `${timeStr} remaining`, isOvershot };
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -27,19 +47,12 @@ function Dashboard({ logout }) {
         checkUserStatus(currentUser.uid);
         fetchUserHistory(currentUser.uid);
       } else {
-        setUser(null);
         setLoading(false);
+        navigate("/login");
       }
     });
     return () => unsubscribe();
   }, []);
-
-  const fetchUserHistory = async (uid) => {
-    try {
-      const res = await fetch(`${BASE_API_URL}/history/${uid}`);
-      if (res.ok) setUserHistory(await res.json());
-    } catch (e) { console.error(e); }
-  };
 
   const checkUserStatus = async (uid) => {
     try {
@@ -50,12 +63,18 @@ function Dashboard({ logout }) {
         setActiveCheckinId(data.checkinId);
         setIsCheckedIn(true);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Status error:", e); }
     finally { setLoading(false); }
   };
 
+  const fetchUserHistory = async (uid) => {
+    try {
+      const res = await fetch(`${BASE_API_URL}/history/${uid}`);
+      if (res.ok) setUserHistory(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
   const handleCheckin = async () => {
-    if (!user) return;
     const now = new Date();
     const checkinId = `ATT-${Date.now()}`;
     const payload = {
@@ -64,7 +83,7 @@ function Dashboard({ logout }) {
       timestamp: now.toISOString(),
       checkinId,
       status: "CheckedIn",
-      punctualityStatus: "Present", // Replace with your logic if needed
+      punctualityStatus: "Present",
       halfDayStatus: "FullDay"
     };
 
@@ -78,18 +97,16 @@ function Dashboard({ logout }) {
         setStartTime(now);
         setIsCheckedIn(true);
         setActiveCheckinId(checkinId);
-        fetchUserHistory(user.uid);
       }
     } catch (e) { alert("Checkin Failed"); }
   };
 
   const confirmCheckout = async () => {
-    const payload = { userId: user.uid, checkinId: activeCheckinId, timestamp: new Date().toISOString() };
     try {
       const res = await fetch(`${BASE_API_URL}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ userId: user.uid, checkinId: activeCheckinId, timestamp: new Date().toISOString() })
       });
       if (res.ok) {
         setIsCheckedIn(false);
@@ -100,7 +117,6 @@ function Dashboard({ logout }) {
     } catch (e) { alert("Checkout Failed"); }
   };
 
-  // Timer logic...
   useEffect(() => {
     if (isCheckedIn && startTime) {
       intervalRef.current = setInterval(() => {
@@ -114,21 +130,40 @@ function Dashboard({ logout }) {
     return () => clearInterval(intervalRef.current);
   }, [isCheckedIn, startTime]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div style={{padding: "50px", textAlign: "center"}}>Loading Dashboard...</div>;
+
+  // Render logic with safety check
+  const timeDetails = calculateRemainingTimeTo5AM();
 
   return (
     <div style={{ padding: "20px", textAlign: "center" }}>
       <UserProfile userEmail={user?.email} checkinTime={startTime} userHistory={userHistory} />
+      
       <button 
         onClick={isCheckedIn ? () => setShowCheckoutModal(true) : handleCheckin}
-        style={{ backgroundColor: isCheckedIn ? "red" : "green", color: "white", padding: "15px 30px", borderRadius: "8px", border: "none" }}
+        style={{ backgroundColor: isCheckedIn ? "#dc3545" : "#28a745", color: "white", padding: "15px 30px", borderRadius: "8px", border: "none", fontSize: "1.2rem", cursor: "pointer", margin: "20px" }}
       >
         {isCheckedIn ? "Check Out" : "Check In"}
       </button>
-      {isCheckedIn && <TimeDisplay elapsedTime={elapsedTime} />}
-      <button onClick={() => { signOut(auth); navigate("/login"); }} style={{ display: "block", margin: "20px auto" }}>Logout</button>
-      {showCheckoutModal && <CheckoutModal confirmCheckout={confirmCheckout} cancelCheckout={() => setShowCheckoutModal(false)} />}
+
+      {isCheckedIn && (
+        <TimeDisplay 
+          elapsedTime={elapsedTime} 
+          timeDetails={timeDetails || { message: "Calculating...", isOvershot: false }} 
+        />
+      )}
+
+      <button onClick={() => signOut(auth)} style={{ display: "block", margin: "40px auto", color: "red", background: "none", border: "1px solid red", padding: "5px 15px", borderRadius: "5px", cursor: "pointer" }}>Logout</button>
+
+      {showCheckoutModal && (
+        <CheckoutModal 
+          confirmCheckout={confirmCheckout} 
+          cancelCheckout={() => setShowCheckoutModal(false)} 
+          elapsedTime={elapsedTime}
+        />
+      )}
     </div>
   );
 }
+
 export default Dashboard;
