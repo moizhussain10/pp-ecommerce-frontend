@@ -88,11 +88,6 @@ function CheckoutModal({
 
           <hr style={{ borderTop: "1px solid #ddd", margin: "15px 0" }} />
 
-          <p style={{ margin: "5px 0", fontSize: "1.1rem" }}>
-            <strong>Target ({TARGET_WORK_HOURS}h):</strong>{" "}
-            {expectedCheckout || "N/A"}
-          </p>
-
           <p
             style={{
               fontSize: "1.5rem",
