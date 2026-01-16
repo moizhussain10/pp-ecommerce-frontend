@@ -5,6 +5,7 @@ import Dashboard from "../Pages/UserDashboar"; // Spelling check: UserDashboard?
 import AdminPanel from "../Pages/AdminPanel"; // Apna Admin Page import karein
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, auth } from "../Config/firebase.js";
+import UserDetails from "../Pages/UserDetails.jsx";
 
 function AppRouter() {
   const [user, setUser] = useState(null); // Boolean ki jagah null rakha hai
