@@ -6,7 +6,7 @@ const styles = {
   container: { padding: "40px", backgroundColor: "#f0f2f5", minHeight: "100vh", fontFamily: "'Inter', sans-serif" },
   card: { backgroundColor: "white", borderRadius: "16px", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", overflow: "hidden" },
   header: { background: "linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%)", padding: "30px", color: "white" },
-  backBtn: {color: "white", border: "none", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", marginBottom: "20px", fontWeight: "600", backdropFilter: "blur(10px)" },
+  backBtn: { color: "white", border: "none", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", marginBottom: "20px", fontWeight: "600", backdropFilter: "blur(10px)" },
   table: { width: "100%", borderCollapse: "collapse" },
   th: { textAlign: "left", padding: "18px", backgroundColor: "#f8f9fa", color: "#5f6368", fontSize: "13px", textTransform: "uppercase", letterSpacing: "1px" },
   td: { padding: "18px", borderBottom: "1px solid #eee", fontSize: "15px", color: "#3c4043" },
@@ -26,8 +26,8 @@ function UserDetails() {
 
   // --- Exact Duration Calculation (H:M:S) ---
   const calculateDuration = (checkin, checkout) => {
-    if (!checkin || !checkout) return <span style={{color: "#aaa"}}>— Running —</span>;
-    
+    if (!checkin || !checkout) return <span style={{ color: "#aaa" }}>— Running —</span>;
+
     const start = new Date(checkin);
     const end = new Date(checkout);
     const diffMs = end - start;
@@ -38,6 +38,37 @@ function UserDetails() {
     const secs = totalSeconds % 60;
 
     return `${hrs}h ${mins}m ${secs}s`;
+  };
+
+  // UserDetails.jsx ke andar ye function add karein
+  const handleEdit = async (record) => {
+    const newCheckin = prompt("Enter New Check-in Time (YYYY-MM-DD HH:MM)", record.checkinTime);
+    const newStatus = prompt("Enter Punctuality Status (Late/On Time)", record.punctualityStatus);
+
+    if (!newCheckin) return;
+
+    const loading = toast.loading("Updating record...");
+
+    try {
+      const res = await fetch(`${BASE_API_URL}/admin/update-attendance/${record._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkinTime: newCheckin,
+          punctualityStatus: newStatus
+        })
+      });
+
+      if (res.ok) {
+        toast.success("Record Updated!", { id: loading });
+        // Page refresh ya state update taake naya data dikhe
+        window.location.reload();
+      } else {
+        toast.error("Update failed", { id: loading });
+      }
+    } catch (e) {
+      toast.error("Network Error", { id: loading });
+    }
   };
 
   useEffect(() => {
@@ -83,8 +114,8 @@ function UserDetails() {
                   </td>
                   <td style={styles.td}>{new Date(record.checkinTime).toLocaleTimeString([], { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td>
                   <td style={styles.td}>
-                    {record.checkoutTime ? 
-                      new Date(record.checkoutTime).toLocaleTimeString([], { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' }) 
+                    {record.checkoutTime ?
+                      new Date(record.checkoutTime).toLocaleTimeString([], { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' })
                       : "—"}
                   </td>
                   <td style={styles.td}>
@@ -96,6 +127,24 @@ function UserDetails() {
                     <span style={styles.durationBadge}>
                       {calculateDuration(record.checkinTime, record.checkoutTime)}
                     </span>
+                  </td>
+                  <th style={styles.th}>Actions</th> // Header mein
+
+                  // Body mein:
+                  <td style={styles.td}>
+                    <button
+                      onClick={() => handleEdit(record)}
+                      style={{
+                        backgroundColor: "#ffc107",
+                        border: "none",
+                        padding: "5px 10px",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontWeight: "bold"
+                      }}
+                    >
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))}
