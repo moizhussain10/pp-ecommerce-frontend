@@ -69,54 +69,61 @@ function UserDetails() {
     return `${hrs}h ${mins}m ${secs}s`;
   };
 
-const openEditModal = (record) => {
-  setSelectedRecord(record);
+  const openEditModal = (record) => {
+    setSelectedRecord(record);
 
-  // Precise local time formatting for datetime-local input
-  const toLocalISO = (dateStr) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    const offset = date.getTimezoneOffset() * 60000; // MS mein offset nikalna
-    const localISOTime = new Date(date.getTime() - offset).toISOString().slice(0, 16);
-    return localISOTime;
-  };
+    const formatForInput = (dateStr) => {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
 
-  setEditData({
-    checkinTime: toLocalISO(record.checkinTime),
-    checkoutTime: toLocalISO(record.checkoutTime),
-    punctualityStatus: record.punctualityStatus || "On Time"
-  });
-  setIsModalOpen(true);
-};
+      // Yahan hum manual formatting kar rahe hain taake browser timezone change na kare
+      const pad = (n) => (n < 10 ? '0' + n : n);
 
-const handleUpdate = async () => {
-  const loadId = toast.loading("Updating record...");
-  
-  try {
-    // Yahan hum local input string ko sahi Date object mein convert kar rahe hain
-    const payload = {
-      checkinTime: new Date(editData.checkinTime).toISOString(),
-      checkoutTime: editData.checkoutTime ? new Date(editData.checkoutTime).toISOString() : null,
-      punctualityStatus: editData.punctualityStatus
+      const year = d.getFullYear();
+      const month = pad(d.getMonth() + 1);
+      const day = pad(d.getDate());
+      const hours = pad(d.getHours());
+      const minutes = pad(d.getMinutes());
+
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
-    const res = await fetch(`${BASE_API_URL}/admin/update-attendance/${selectedRecord._id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+    setEditData({
+      checkinTime: formatForInput(record.checkinTime),
+      checkoutTime: formatForInput(record.checkoutTime),
+      punctualityStatus: record.punctualityStatus || "On Time"
     });
+    setIsModalOpen(true);
+  };
 
-    if (res.ok) {
-      toast.success("Time Updated Correctly!", { id: loadId });
-      setIsModalOpen(false);
-      fetchHistory(); 
-    } else {
-      toast.error("Update failed", { id: loadId });
+  const handleUpdate = async () => {
+    const loadId = toast.loading("Updating record...");
+
+    try {
+      // Direct new Date(editData.checkinTime) Pakistan time hi banayega
+      const payload = {
+        checkinTime: new Date(editData.checkinTime).toISOString(),
+        checkoutTime: editData.checkoutTime ? new Date(editData.checkoutTime).toISOString() : null,
+        punctualityStatus: editData.punctualityStatus
+      };
+
+      const res = await fetch(`${BASE_API_URL}/admin/update-attendance/${selectedRecord._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        toast.success("Time Fixed Successfully!", { id: loadId });
+        setIsModalOpen(false);
+        fetchHistory();
+      } else {
+        toast.error("Update failed", { id: loadId });
+      }
+    } catch (e) {
+      toast.error("Network Error", { id: loadId });
     }
-  } catch (e) {
-    toast.error("Network Error", { id: loadId });
-  }
-};
+  };
 
   if (loading) return <div style={{ textAlign: "center", padding: "100px", fontSize: "20px" }}>Loading...</div>;
 
@@ -148,7 +155,11 @@ const handleUpdate = async () => {
                   <td style={styles.td}>
                     <div style={{ fontWeight: "600" }}>{new Date(record.checkinTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                   </td>
-                  <td style={styles.td}>{new Date(record.checkinTime).toLocaleTimeString([], { hour12: true, hour: '2-digit', minute: '2-digit' })}</td>
+                  <td style={styles.td}>{new Date(record.checkinTime).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  })}</td>
                   <td style={styles.td}>{record.checkoutTime ? new Date(record.checkoutTime).toLocaleTimeString([], { hour12: true, hour: '2-digit', minute: '2-digit' }) : "—"}</td>
                   <td style={styles.td}><span style={styles.badge(record.punctualityStatus)}>{record.punctualityStatus || "On Time"}</span></td>
                   <td style={styles.td}><span style={styles.durationBadge}>{calculateDuration(record.checkinTime, record.checkoutTime)}</span></td>
@@ -168,20 +179,20 @@ const handleUpdate = async () => {
           <div style={modalStyles.modal}>
             <h3 style={{ marginTop: 0, color: "#1a73e8" }}>Edit Attendance</h3>
             <p style={{ fontSize: "13px", color: "#666", marginBottom: "20px" }}>Update time logs for {email}</p>
-            
+
             <div style={modalStyles.inputGroup}>
               <label style={modalStyles.label}>Check-in Time</label>
-              <input type="datetime-local" style={modalStyles.input} value={editData.checkinTime} onChange={(e) => setEditData({...editData, checkinTime: e.target.value})} />
+              <input type="datetime-local" style={modalStyles.input} value={editData.checkinTime} onChange={(e) => setEditData({ ...editData, checkinTime: e.target.value })} />
             </div>
 
             <div style={modalStyles.inputGroup}>
               <label style={modalStyles.label}>Check-out Time</label>
-              <input type="datetime-local" style={modalStyles.input} value={editData.checkoutTime} onChange={(e) => setEditData({...editData, checkoutTime: e.target.value})} />
+              <input type="datetime-local" style={modalStyles.input} value={editData.checkoutTime} onChange={(e) => setEditData({ ...editData, checkoutTime: e.target.value })} />
             </div>
 
             <div style={modalStyles.inputGroup}>
               <label style={modalStyles.label}>Punctuality</label>
-              <select style={modalStyles.input} value={editData.punctualityStatus} onChange={(e) => setEditData({...editData, punctualityStatus: e.target.value})}>
+              <select style={modalStyles.input} value={editData.punctualityStatus} onChange={(e) => setEditData({ ...editData, punctualityStatus: e.target.value })}>
                 <option value="On Time">On Time</option>
                 <option value="Late">Late</option>
               </select>
