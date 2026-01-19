@@ -69,18 +69,25 @@ function UserDetails() {
     return `${hrs}h ${mins}m ${secs}s`;
   };
 
-  const openEditModal = (record) => {
-    setSelectedRecord(record);
-    // Format date for datetime-local input (YYYY-MM-DDTHH:MM)
-    const formatDate = (date) => date ? new Date(new Date(date).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
-    
-    setEditData({
-      checkinTime: formatDate(record.checkinTime),
-      checkoutTime: formatDate(record.checkoutTime),
-      punctualityStatus: record.punctualityStatus || "On Time"
-    });
-    setIsModalOpen(true);
+const openEditModal = (record) => {
+  setSelectedRecord(record);
+
+  // Precise local time formatting for datetime-local input
+  const toLocalISO = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const offset = date.getTimezoneOffset() * 60000; // MS mein offset nikalna
+    const localISOTime = new Date(date.getTime() - offset).toISOString().slice(0, 16);
+    return localISOTime;
   };
+
+  setEditData({
+    checkinTime: toLocalISO(record.checkinTime),
+    checkoutTime: toLocalISO(record.checkoutTime),
+    punctualityStatus: record.punctualityStatus || "On Time"
+  });
+  setIsModalOpen(true);
+};
 
   const handleUpdate = async () => {
     const loadId = toast.loading("Updating record...");
