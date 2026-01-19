@@ -128,6 +128,8 @@ function Dashboard() {
     } catch (e) { console.error("History Fetch Error:", e); }
   };
 
+  
+
   // --- 4. Handlers ---
 const handleCheckin = async () => {
   if (!user) return;
@@ -135,15 +137,23 @@ const handleCheckin = async () => {
   const cId = `ATT-${Date.now()}`;
   const pStatus = calculatePunctuality(now);
 
-  // FIELD NAMES MUST MATCH BACKEND SCHEMA
+  // --- Half Day Logic ---
+  // Agar check-in raat 12:00 AM (0 hours) ya uske baad ho raha hai
+  // Aap apni zaroorat ke mutabiq ghante (hours) change kar sakte hain
+  let workType = "Full Day";
+  if (now.getHours() >= 0 && now.getHours() < 5) { 
+    // Misal ke taur par: Raat 12 se subah 5 baje ke darmiyan check-in par Half Day
+    workType = "Half Day";
+  }
+
   const payload = {
     userId: user.uid,
     email: user.email,
-    checkinTime: now.toISOString(), // Isay 'timestamp' se badal kar 'checkinTime' kar diya
+    checkinTime: now.toISOString(),
     checkinId: cId,
     status: "CheckedIn",
     punctualityStatus: pStatus,
-    halfDayStatus: "FullDay"
+    halfDayStatus: workType // Ab ye dynamic ho gaya hai
   };
 
   try {
@@ -153,10 +163,10 @@ const handleCheckin = async () => {
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json(); // Data ko yahan extract karein
+    const data = await res.json();
 
     if (res.status === 400) {
-      toast.error('You have already checkedin today')
+      toast.error('You have already checked in today');
       return;
     }
 
@@ -165,14 +175,13 @@ const handleCheckin = async () => {
       setActiveCheckinId(cId);
       setIsCheckedIn(true);
       setPunctualityStatus(pStatus);
-      toast.success('Checked in Successfully')
+      toast.success(`Checked in Successfully as ${workType}`);
     } else {
-      // Agar koi aur error hai (like 500)
       toast.error("Server Error occurred");
     }
   } catch (e) { 
     console.error("Check-in Error:", e);
-    toast.error("Check-in Failed: Network or Server Error"); 
+    toast.error("Check-in Failed"); 
   }
 };
 
