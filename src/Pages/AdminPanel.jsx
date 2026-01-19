@@ -125,9 +125,9 @@ function AdminDashboard() {
                 </td>
                 <td style={{ padding: "15px" }}>
                   {record.status === "CheckedIn" ? (
-                    <span style={{ color: "#2f855a", fontWeight: "bold" }}>checkin</span>
+                    <span style={{ color: "#2f855a", fontWeight: "bold" }}>Checkin</span>
                   ) : (
-                    <span style={{ color: "#a0aec0" }}>checkout</span>
+                    <span style={{ color: "#a0aec0" }}>Checkout</span>
                   )}
                 </td>
                 <td style={{ padding: "15px" }}>
