@@ -15,6 +15,7 @@ import {
   CHECKOUT_TARGET_HOUR,
   CHECKOUT_TARGET_MINUTE
 } from "../constants";
+import toast from "react-hot-toast";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -155,7 +156,7 @@ const handleCheckin = async () => {
     const data = await res.json(); // Data ko yahan extract karein
 
     if (res.status === 400) {
-      alert(data.message); 
+      toast.error('You have already checkedin today')
       return;
     }
 
@@ -164,14 +165,14 @@ const handleCheckin = async () => {
       setActiveCheckinId(cId);
       setIsCheckedIn(true);
       setPunctualityStatus(pStatus);
-      alert("Check-in Successful!");
+      toast.success('Checked in Successfully')
     } else {
       // Agar koi aur error hai (like 500)
-      alert(data.message || "Server Error occurred");
+      toast.error("Server Error occurred");
     }
   } catch (e) { 
     console.error("Check-in Error:", e);
-    alert("Check-in Failed: Network or Server Error"); 
+    toast.error("Check-in Failed: Network or Server Error"); 
   }
 };
 
@@ -196,9 +197,9 @@ const handleCheckin = async () => {
         setActiveCheckinId(null);
         setShowCheckoutModal(false);
         fetchUserHistory(user.uid);
-        alert("Checked Out Successfully!");
+        toast.success("Checked Out Successfully!");
       }
-    } catch (e) { alert("Checkout Error"); }
+    } catch (e) { toast.error("Checkout Error"); }
   };
 
   // Timer logic
@@ -218,6 +219,16 @@ const handleCheckin = async () => {
   }, [isCheckedIn, startTime]);
 
   if (loading) return <div style={{ textAlign: "center", marginTop: "50px" }}>Authenticating...</div>;
+
+    const handleLogout = async () => {
+      try {
+        await signOut(auth);
+        toast.success('logout successfully')
+        navigate("/login");
+      } catch (error) {
+        console.error("Logout Error:", error);
+      }
+    };
 
   return (
     <div style={{ padding: "20px", textAlign: "center" }}>
@@ -259,7 +270,7 @@ const handleCheckin = async () => {
       )}
 
       <button
-        onClick={() => signOut(auth)}
+        onClick={handleLogout}
         style={{ display: "block", margin: "40px auto", color: "#666", background: "none", border: "1px solid #ccc", padding: "5px 15px", borderRadius: "5px", cursor: "pointer" }}
       >
         Logout

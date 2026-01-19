@@ -6,6 +6,7 @@ import AdminPanel from "../Pages/AdminPanel"; // Apna Admin Page import karein
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, auth } from "../Config/firebase.js";
 import UserDetails from "../Pages/UserDetails.jsx";
+import { Toaster } from "react-hot-toast";
 
 function AppRouter() {
   const [user, setUser] = useState(null); // Boolean ki jagah null rakha hai
@@ -24,6 +25,7 @@ function AppRouter() {
 
   return (
     <BrowserRouter>
+    <Toaster position="top-center"/>
       <Routes>
         {/* PUBLIC ROUTES & AUTO REDIRECT */}
         <Route 
