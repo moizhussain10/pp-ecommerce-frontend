@@ -128,42 +128,52 @@ function Dashboard() {
   };
 
   // --- 4. Handlers ---
-  const handleCheckin = async () => {
-    if (!user) return;
-    const now = new Date();
-    const cId = `ATT-${Date.now()}`;
-    const pStatus = calculatePunctuality(now);
+const handleCheckin = async () => {
+  if (!user) return;
+  const now = new Date();
+  const cId = `ATT-${Date.now()}`;
+  const pStatus = calculatePunctuality(now);
 
-    const payload = {
-      userId: user.uid,
-      email: user.email,
-      timestamp: now.toISOString(),
-      checkinId: cId,
-      status: "CheckedIn",
-      punctualityStatus: pStatus,
-      halfDayStatus: "FullDay"
-    };
-
-    try {
-      const res = await fetch(`${BASE_API_URL}/checkin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.status === 400) {
-        alert(data.message); // "Aap aaj ka check-in pehle hi kar chuke hain..."
-        return;
-      }
-
-      if (res.ok) {
-        setStartTime(now);
-        setActiveCheckinId(cId);
-        setIsCheckedIn(true);
-        setPunctualityStatus(pStatus);
-      }
-    } catch (e) { alert("Check-in Failed"); }
+  // FIELD NAMES MUST MATCH BACKEND SCHEMA
+  const payload = {
+    userId: user.uid,
+    email: user.email,
+    checkinTime: now.toISOString(), // Isay 'timestamp' se badal kar 'checkinTime' kar diya
+    checkinId: cId,
+    status: "CheckedIn",
+    punctualityStatus: pStatus,
+    halfDayStatus: "FullDay"
   };
+
+  try {
+    const res = await fetch(`${BASE_API_URL}/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json(); // Data ko yahan extract karein
+
+    if (res.status === 400) {
+      alert(data.message); 
+      return;
+    }
+
+    if (res.ok) {
+      setStartTime(now);
+      setActiveCheckinId(cId);
+      setIsCheckedIn(true);
+      setPunctualityStatus(pStatus);
+      alert("Check-in Successful!");
+    } else {
+      // Agar koi aur error hai (like 500)
+      alert(data.message || "Server Error occurred");
+    }
+  } catch (e) { 
+    console.error("Check-in Error:", e);
+    alert("Check-in Failed: Network or Server Error"); 
+  }
+};
 
   const confirmCheckout = async () => {
     if (!activeCheckinId) return;
