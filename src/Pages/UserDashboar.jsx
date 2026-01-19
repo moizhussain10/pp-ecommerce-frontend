@@ -150,6 +150,12 @@ function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
+      if (response.status === 400) {
+        alert(data.message); // "Aap aaj ka check-in pehle hi kar chuke hain..."
+        return;
+      }
+
       if (res.ok) {
         setStartTime(now);
         setActiveCheckinId(cId);
