@@ -6,7 +6,7 @@ const styles = {
   container: { padding: "40px", backgroundColor: "#f0f2f5", minHeight: "100vh", fontFamily: "'Inter', sans-serif" },
   card: { backgroundColor: "white", borderRadius: "16px", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", overflow: "hidden" },
   header: { background: "linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%)", padding: "30px", color: "white" },
-  backBtn: { backgroundColor: "rgba(255,255,255,0.2)", color: "white", border: "none", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", marginBottom: "20px", fontWeight: "600", backdropFilter: "blur(10px)" },
+  backBtn: { backgroundColor: "rgba(12, 12, 12, 0.2)", color: "white", border: "none", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", marginBottom: "20px", fontWeight: "600", backdropFilter: "blur(10px)" },
   table: { width: "100%", borderCollapse: "collapse" },
   th: { textAlign: "left", padding: "18px", backgroundColor: "#f8f9fa", color: "#5f6368", fontSize: "13px", textTransform: "uppercase", letterSpacing: "1px" },
   td: { padding: "18px", borderBottom: "1px solid #eee", fontSize: "15px", color: "#3c4043" },
