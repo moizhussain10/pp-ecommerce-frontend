@@ -89,26 +89,34 @@ const openEditModal = (record) => {
   setIsModalOpen(true);
 };
 
-  const handleUpdate = async () => {
-    const loadId = toast.loading("Updating record...");
-    try {
-      const res = await fetch(`${BASE_API_URL}/admin/update-attendance/${selectedRecord._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editData)
-      });
+const handleUpdate = async () => {
+  const loadId = toast.loading("Updating record...");
+  
+  try {
+    // Yahan hum local input string ko sahi Date object mein convert kar rahe hain
+    const payload = {
+      checkinTime: new Date(editData.checkinTime).toISOString(),
+      checkoutTime: editData.checkoutTime ? new Date(editData.checkoutTime).toISOString() : null,
+      punctualityStatus: editData.punctualityStatus
+    };
 
-      if (res.ok) {
-        toast.success("Record Updated!", { id: loadId });
-        setIsModalOpen(false);
-        fetchHistory(); // Refresh data without page reload
-      } else {
-        toast.error("Update failed", { id: loadId });
-      }
-    } catch (e) {
-      toast.error("Network Error", { id: loadId });
+    const res = await fetch(`${BASE_API_URL}/admin/update-attendance/${selectedRecord._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      toast.success("Time Updated Correctly!", { id: loadId });
+      setIsModalOpen(false);
+      fetchHistory(); 
+    } else {
+      toast.error("Update failed", { id: loadId });
     }
-  };
+  } catch (e) {
+    toast.error("Network Error", { id: loadId });
+  }
+};
 
   if (loading) return <div style={{ textAlign: "center", padding: "100px", fontSize: "20px" }}>Loading...</div>;
 
