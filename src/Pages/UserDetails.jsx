@@ -2,27 +2,42 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BASE_API_URL } from "../constants";
 
+const styles = {
+  container: { padding: "40px", backgroundColor: "#f0f2f5", minHeight: "100vh", fontFamily: "'Inter', sans-serif" },
+  card: { backgroundColor: "white", borderRadius: "16px", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", overflow: "hidden" },
+  header: { background: "linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%)", padding: "30px", color: "white" },
+  backBtn: { backgroundColor: "rgba(255,255,255,0.2)", color: "white", border: "none", padding: "10px 20px", borderRadius: "8px", cursor: "pointer", marginBottom: "20px", fontWeight: "600", backdropFilter: "blur(10px)" },
+  table: { width: "100%", borderCollapse: "collapse" },
+  th: { textAlign: "left", padding: "18px", backgroundColor: "#f8f9fa", color: "#5f6368", fontSize: "13px", textTransform: "uppercase", letterSpacing: "1px" },
+  td: { padding: "18px", borderBottom: "1px solid #eee", fontSize: "15px", color: "#3c4043" },
+  badge: (type) => ({
+    padding: "6px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "600",
+    backgroundColor: type === "Late" ? "#feeef0" : "#e6f4ea",
+    color: type === "Late" ? "#d93025" : "#1e8e3e"
+  }),
+  durationBadge: { backgroundColor: "#e8f0fe", color: "#1967d2", padding: "6px 12px", borderRadius: "6px", fontWeight: "bold", fontFamily: "monospace" }
+};
+
 function UserDetails() {
   const { email } = useParams();
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- Duration Calculate karne ka Function ---
+  // --- Exact Duration Calculation (H:M:S) ---
   const calculateDuration = (checkin, checkout) => {
-    if (!checkin || !checkout) return "—";
+    if (!checkin || !checkout) return <span style={{color: "#aaa"}}>— Running —</span>;
     
     const start = new Date(checkin);
     const end = new Date(checkout);
-    const diffMs = end - start; // Milliseconds ka farq
+    const diffMs = end - start;
 
-    if (diffMs < 0) return "Invalid";
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
 
-    const totalMinutes = Math.floor(diffMs / 60000);
-    const hrs = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-
-    return `${hrs}h ${mins}m`;
+    return `${hrs}h ${mins}m ${secs}s`;
   };
 
   useEffect(() => {
@@ -37,51 +52,56 @@ function UserDetails() {
     fetchHistory();
   }, [email]);
 
-  if (loading) return <div style={{ textAlign: "center", padding: "50px" }}>Loading History...</div>;
+  if (loading) return <div style={{ textAlign: "center", padding: "100px", fontSize: "20px" }}>Loading Employee History...</div>;
 
   return (
-    <div style={{ padding: "30px", backgroundColor: "#f8f9fa", minHeight: "100vh", fontFamily: "sans-serif" }}>
-      <button onClick={() => navigate(-1)} style={{ marginBottom: "20px", padding: "10px 20px", border: "none", borderRadius: "5px", cursor: "pointer", backgroundColor: "#6c757d", color: "white" }}>
-        ← Back to Admin Panel
-      </button>
+    <div style={styles.container}>
+      <button onClick={() => navigate(-1)} style={styles.backBtn}>← Back to Admin Panel</button>
 
-      <div style={{ backgroundColor: "white", padding: "25px", borderRadius: "10px", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
-        <h2 style={{ marginBottom: "20px" }}>Detailed Attendance: <span style={{ color: "#007bff" }}>{email}</span></h2>
-        
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ backgroundColor: "#007bff", color: "white" }}>
-              <th style={{ padding: "12px", textAlign: "left" }}>Date</th>
-              <th style={{ padding: "12px", textAlign: "left" }}>Check-in</th>
-              <th style={{ padding: "12px", textAlign: "left" }}>Check-out</th>
-              <th style={{ padding: "12px", textAlign: "left" }}>Punctuality</th>
-              <th style={{ padding: "12px", textAlign: "left", backgroundColor: "#28a745" }}>Duration</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((record) => (
-              <tr key={record._id} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: "12px" }}>{new Date(record.checkinTime).toLocaleDateString()}</td>
-                <td style={{ padding: "12px" }}>{new Date(record.checkinTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                <td style={{ padding: "12px" }}>
-                  {record.checkoutTime ? new Date(record.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Active"}
-                </td>
-                <td style={{ padding: "12px" }}>
-                  <span style={{ 
-                    color: record.punctualityStatus === "Late" ? "#d9534f" : "#5cb85c",
-                    fontWeight: "bold" 
-                  }}>
-                    {record.punctualityStatus}
-                  </span>
-                </td>
-                {/* --- Duration Column --- */}
-                <td style={{ padding: "12px", fontWeight: "600", color: "#333" }}>
-                  {calculateDuration(record.checkinTime, record.checkoutTime)}
-                </td>
+      <div style={styles.card}>
+        <div style={styles.header}>
+          <h1 style={{ margin: 0, fontSize: "24px" }}>Attendance Analytics</h1>
+          <p style={{ margin: "5px 0 0", opacity: 0.8 }}>Reports for: <strong>{email}</strong></p>
+        </div>
+
+        <div style={{ overflowX: "auto" }}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Date</th>
+                <th style={styles.th}>Check-In</th>
+                <th style={styles.th}>Check-Out</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Total Duration (H:M:S)</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {history.map((record) => (
+                <tr key={record._id}>
+                  <td style={styles.td}>
+                    <div style={{ fontWeight: "600" }}>{new Date(record.checkinTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                  </td>
+                  <td style={styles.td}>{new Date(record.checkinTime).toLocaleTimeString([], { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td>
+                  <td style={styles.td}>
+                    {record.checkoutTime ? 
+                      new Date(record.checkoutTime).toLocaleTimeString([], { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' }) 
+                      : "—"}
+                  </td>
+                  <td style={styles.td}>
+                    <span style={styles.badge(record.punctualityStatus)}>
+                      {record.punctualityStatus || "On Time"}
+                    </span>
+                  </td>
+                  <td style={styles.td}>
+                    <span style={styles.durationBadge}>
+                      {calculateDuration(record.checkinTime, record.checkoutTime)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
